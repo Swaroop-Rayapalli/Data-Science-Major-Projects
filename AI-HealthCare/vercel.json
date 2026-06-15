@@ -5,17 +5,42 @@
       "src": "api/index.py",
       "use": "@vercel/python",
       "config": {
-        "includeFiles": [
-          "public/**",
-          "trained-models/**"
-        ]
+        "includeFiles": ["trained-models/**"]
       }
+    },
+    {
+      "src": "public/**",
+      "use": "@vercel/static"
     }
   ],
   "routes": [
     {
-      "src": "/(.*)",
+      "src": "/api/(.*)",
       "dest": "/api/index.py"
+    },
+    {
+      "src": "/",
+      "dest": "/public/index.html"
+    },
+    {
+      "src": "/heart",
+      "dest": "/public/heart.html"
+    },
+    {
+      "src": "/fraud",
+      "dest": "/public/fraud.html"
+    },
+    {
+      "src": "/medicine",
+      "dest": "/public/medicine.html"
+    },
+    {
+      "src": "/(css|js)/(.*)",
+      "dest": "/public/$1/$2"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "/public/$1"
     }
   ]
 }
