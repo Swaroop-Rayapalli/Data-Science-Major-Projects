@@ -28,6 +28,8 @@ def create_app():
     else:
         if db_url.startswith('postgres://'):
             db_url = db_url.replace('postgres://', 'postgresql://', 1)
+        # Strip channel_binding param — psycopg2 does NOT support it; sslmode=require is enough
+        db_url = db_url.replace('&channel_binding=require', '').replace('channel_binding=require&', '').replace('channel_binding=require', '').rstrip('?&')
         print("[DB] Connected to Neon PostgreSQL.")
 
     app.config['SECRET_KEY']                  = os.environ.get('SECRET_KEY', 'smart-edu-secret-2024')
@@ -37,8 +39,8 @@ def create_app():
         'pool_pre_ping': True,
         'pool_recycle':  300,
         'connect_args':  {
-            'sslmode':         'require',
-            'channel_binding': 'require',
+            'sslmode': 'require',
+            # Note: channel_binding is NOT a valid psycopg2 connect_arg — removed
         } if 'neon.tech' in db_url else {}
     }
     app.config['UPLOAD_FOLDER']       = os.path.join(BASE_DIR, 'uploads')
@@ -72,8 +74,12 @@ def create_app():
             User, OTPCode,
             StudentPrediction, FeedbackAnalysis, ResumeResult  # noqa: F401
         )
-        db.create_all()
-        print("[DB] All tables created/verified on Neon PostgreSQL.")
+        try:
+            db.create_all()
+            print("[DB] All tables created/verified.")
+        except Exception as e:
+            # Don't crash the app on startup if DB is temporarily unavailable
+            print(f"[DB] Warning: db.create_all() failed: {e}")
 
         @login_manager.user_loader
         def load_user(user_id):
