@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import RedirectResponse
+from fastapi.responses import FileResponse
 from api.routers import heart, fraud, medicine
 import os
 
@@ -23,6 +23,9 @@ app.include_router(medicine.router)
 def health_check():
     return {"status": "ok", "message": "AI Healthcare API is running"}
 
-# For local development, serve the public folder
-if os.path.isdir("public"):
-    app.mount("/", StaticFiles(directory="public", html=True), name="public")
+# Serve static files — use __file__ so this works on Vercel (CWD is not project root)
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+PUBLIC_DIR = os.path.join(BASE_DIR, "public")
+
+if os.path.isdir(PUBLIC_DIR):
+    app.mount("/", StaticFiles(directory=PUBLIC_DIR, html=True), name="public")
