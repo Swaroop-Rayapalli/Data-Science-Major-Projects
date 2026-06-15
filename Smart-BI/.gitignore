@@ -12,16 +12,11 @@ __pycache__/
 *.egg-info/
 dist/
 build/
+*.pkl
+*.db
 
 # Vercel
 .vercel/
-
-# Database
-*.db
-*.sqlite
-
-# Uploads (ephemeral on Vercel)
-uploads/
 
 # OS
 .DS_Store

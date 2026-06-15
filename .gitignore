@@ -1,0 +1,19 @@
+# Root-level gitignore
+
+# Never commit .env files (contain secrets)
+**/.env
+**/.env.local
+**/.env.production
+.env
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+
+# Vercel
+.vercel/
+
+# OS
+.DS_Store
+Thumbs.db

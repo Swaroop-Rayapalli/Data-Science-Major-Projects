@@ -1,0 +1,8 @@
+flask
+numpy
+pandas
+scikit-learn
+joblib
+prophet
+psycopg2-binary
+gunicorn
