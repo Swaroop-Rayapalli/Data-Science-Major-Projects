@@ -43,7 +43,9 @@ def create_app():
             # Note: channel_binding is NOT a valid psycopg2 connect_arg — removed
         } if 'neon.tech' in db_url else {}
     }
-    app.config['UPLOAD_FOLDER']       = os.path.join(BASE_DIR, 'uploads')
+    # Vercel's /var/task is read-only — use /tmp for uploads on serverless
+    UPLOAD_FOLDER = '/tmp/uploads' if os.environ.get('VERCEL') else os.path.join(BASE_DIR, 'uploads')
+    app.config['UPLOAD_FOLDER']       = UPLOAD_FOLDER
     app.config['MAX_CONTENT_LENGTH']  = 16 * 1024 * 1024
 
     # ── Gmail SMTP for OTP emails ─────────────────────────────────────────────
@@ -59,8 +61,11 @@ def create_app():
     login_manager.login_message       = 'Please log in to access this page.'
     login_manager.login_message_category = 'warning'
 
-    # Ensure upload directory exists
-    os.makedirs(os.path.join(BASE_DIR, 'uploads'), exist_ok=True)
+    # Create upload directory (writable: /tmp on Vercel, local uploads/ otherwise)
+    try:
+        os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+    except OSError:
+        pass  # Non-fatal — uploads won't work but app still boots
 
     # Initialize extensions
     db.init_app(app)
