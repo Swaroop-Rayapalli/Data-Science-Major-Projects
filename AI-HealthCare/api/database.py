@@ -3,10 +3,16 @@ from sqlalchemy import create_engine, Column, Integer, String, Numeric, Date, Fl
 from sqlalchemy.orm import declarative_base, sessionmaker
 from datetime import datetime
 
-DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./healthcare.db")
+# On Vercel /var/task is read-only — use /tmp for SQLite, or Postgres via env var
+_raw_db_url = os.getenv("DATABASE_URL", "")
+if not _raw_db_url:
+    _sqlite_path = "/tmp/healthcare.db" if os.environ.get("VERCEL") else "./healthcare.db"
+    DATABASE_URL = f"sqlite:///{_sqlite_path}"
+else:
+    DATABASE_URL = _raw_db_url
 
 engine = create_engine(
-    DATABASE_URL, 
+    DATABASE_URL,
     connect_args={"check_same_thread": False} if DATABASE_URL.startswith("sqlite") else {}
 )
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
@@ -44,8 +50,11 @@ class MedicineForecast(Base):
     predicted_demand = Column(Integer)
     forecast_date = Column(Date)
 
-# Create tables
-Base.metadata.create_all(bind=engine)
+# Create tables — wrapped so an import-time DB error doesn't crash the module
+try:
+    Base.metadata.create_all(bind=engine)
+except Exception as e:
+    print(f"[DB] Warning: create_all failed: {e}")
 
 def get_db():
     db = SessionLocal()

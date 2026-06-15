@@ -9,10 +9,13 @@ from api.database import get_db, MedicineForecast
 
 router = APIRouter(prefix="/api/medicine", tags=["Medicine Forecasting"])
 
-MODEL_PATH = os.path.join("trained-models", "prophet_model.pkl")
+# Use __file__-based absolute path — CWD on Vercel is NOT the project root
+_BASE = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+MODEL_PATH = os.path.join(_BASE, "trained-models", "prophet_model.pkl")
 
 try:
     prophet_model = joblib.load(MODEL_PATH)
+    print(f"[Medicine] Prophet model loaded from {_BASE}/trained-models/")
 except Exception as e:
     print(f"Warning: Could not load prophet model: {e}")
     prophet_model = None

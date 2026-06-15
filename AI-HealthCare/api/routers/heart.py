@@ -9,13 +9,15 @@ from api.database import get_db, Prediction
 
 router = APIRouter(prefix="/api/heart", tags=["Heart Disease"])
 
-# Load models safely
-MODEL_PATH = os.path.join("trained-models", "heart_disease_random_forest_model.pkl")
-SCALER_PATH = os.path.join("trained-models", "heart_disease_scaler.pkl")
+# Use __file__-based absolute path — CWD on Vercel is NOT the project root
+_BASE = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+MODEL_PATH  = os.path.join(_BASE, "trained-models", "heart_disease_random_forest_model.pkl")
+SCALER_PATH = os.path.join(_BASE, "trained-models", "heart_disease_scaler.pkl")
 
 try:
     heart_model = joblib.load(MODEL_PATH)
     heart_scaler = joblib.load(SCALER_PATH)
+    print(f"[Heart] Models loaded from {_BASE}/trained-models/")
 except Exception as e:
     print(f"Warning: Could not load heart models: {e}")
     heart_model, heart_scaler = None, None
