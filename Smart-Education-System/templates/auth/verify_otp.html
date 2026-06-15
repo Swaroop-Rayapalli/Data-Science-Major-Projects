@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Verify Email | EduAI Platform</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <style>
+        body { background: var(--bg-primary, #0f172a); min-height: 100vh; display: flex; align-items: center; justify-content: center; font-family: 'Inter', sans-serif; margin: 0; }
+        .auth-wrapper { width: 100%; max-width: 440px; padding: 20px; }
+        .auth-card { background: var(--bg-card, #1e293b); border: 1px solid var(--border-color, #334155); border-radius: 24px; padding: 40px; box-shadow: 0 25px 50px rgba(0,0,0,0.5); }
+        .otp-icon { width: 72px; height: 72px; background: linear-gradient(135deg, rgba(99,102,241,0.15), rgba(139,92,246,0.15)); border: 2px solid rgba(99,102,241,0.3); border-radius: 20px; display: flex; align-items: center; justify-content: center; font-size: 32px; margin: 0 auto 20px; animation: pulse-border 2s ease-in-out infinite; }
+        @keyframes pulse-border { 0%,100% { box-shadow: 0 0 0 0 rgba(99,102,241,0.3); } 50% { box-shadow: 0 0 0 8px rgba(99,102,241,0); } }
+        .auth-title { font-size: 1.5rem; font-weight: 800; color: #e2e8f0; text-align: center; margin: 0; }
+        .auth-subtitle { font-size: 0.85rem; color: #64748b; text-align: center; margin: 8px 0 28px; }
+        .email-highlight { color: #818cf8; font-weight: 600; }
+        .otp-inputs { display: flex; gap: 10px; justify-content: center; margin-bottom: 24px; }
+        .otp-box { width: 52px; height: 60px; background: #0f172a; border: 2px solid #334155; border-radius: 12px; color: #e2e8f0; font-size: 1.5rem; font-weight: 700; text-align: center; font-family: monospace; transition: all 0.2s; outline: none; }
+        .otp-box:focus { border-color: #6366f1; box-shadow: 0 0 0 3px rgba(99,102,241,0.2); }
+        .otp-box.filled { border-color: #818cf8; background: rgba(99,102,241,0.08); }
+        .btn-auth { background: linear-gradient(135deg, #6366f1, #8b5cf6); border: none; color: #fff; font-weight: 700; font-size: 0.9rem; padding: 13px; border-radius: 10px; width: 100%; transition: all 0.2s; }
+        .btn-auth:hover { transform: translateY(-1px); box-shadow: 0 8px 20px rgba(99,102,241,0.35); color: #fff; }
+        .btn-resend { background: transparent; border: 1.5px solid #334155; color: #94a3b8; font-weight: 600; font-size: 0.85rem; padding: 10px; border-radius: 10px; width: 100%; transition: all 0.2s; }
+        .btn-resend:hover { border-color: #6366f1; color: #818cf8; }
+        .countdown { text-align: center; font-size: 0.82rem; color: #64748b; margin-bottom: 12px; }
+        .countdown span { color: #f59e0b; font-weight: 700; }
+        .auth-link { color: #6366f1; text-decoration: none; font-weight: 600; font-size: 0.82rem; }
+        .auth-link:hover { color: #818cf8; }
+        .alert { border-radius: 10px; font-size: 0.85rem; border: none; }
+        .alert-danger  { background: rgba(239,68,68,0.12); color: #fca5a5; }
+        .alert-success { background: rgba(34,197,94,0.12); color: #86efac; }
+        .alert-warning { background: rgba(245,158,11,0.12); color: #fcd34d; }
+        .alert-info    { background: rgba(99,102,241,0.12); color: #a5b4fc; }
+    </style>
+</head>
+<body>
+<div class="auth-wrapper">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+    <div class="mb-3">
+        {% for category, message in messages %}
+        <div class="alert alert-{{ category }} d-flex align-items-center gap-2">
+            <i class="bi bi-{% if category == 'success' %}check-circle{% elif category == 'danger' %}x-circle{% elif category == 'warning' %}exclamation-triangle{% else %}info-circle{% endif %}-fill"></i>
+            {{ message }}
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+    {% endwith %}
+
+    <div class="auth-card">
+        <div class="otp-icon">📧</div>
+        <h1 class="auth-title">Check Your Email</h1>
+        <p class="auth-subtitle">
+            We sent a 6-digit code to<br>
+            <span class="email-highlight">{{ email }}</span>
+        </p>
+
+        <!-- OTP Verify Form -->
+        <form method="POST" action="{{ url_for('auth.verify_otp') }}" id="otpForm">
+            <input type="hidden" name="action" value="verify">
+            <input type="hidden" name="otp" id="otpHidden">
+
+            <div class="otp-inputs" id="otpInputs">
+                <input type="text" class="otp-box" maxlength="1" inputmode="numeric" id="d0" autocomplete="off">
+                <input type="text" class="otp-box" maxlength="1" inputmode="numeric" id="d1" autocomplete="off">
+                <input type="text" class="otp-box" maxlength="1" inputmode="numeric" id="d2" autocomplete="off">
+                <input type="text" class="otp-box" maxlength="1" inputmode="numeric" id="d3" autocomplete="off">
+                <input type="text" class="otp-box" maxlength="1" inputmode="numeric" id="d4" autocomplete="off">
+                <input type="text" class="otp-box" maxlength="1" inputmode="numeric" id="d5" autocomplete="off">
+            </div>
+
+            <button type="submit" class="btn btn-auth mb-3" id="verifyBtn">
+                <i class="bi bi-shield-check-fill me-2"></i>Verify Email
+            </button>
+        </form>
+
+        <!-- Resend Form -->
+        <div class="countdown" id="countdownWrap">
+            Resend code in <span id="countdownTimer">60</span>s
+        </div>
+
+        <form method="POST" action="{{ url_for('auth.verify_otp') }}" id="resendForm">
+            <input type="hidden" name="action" value="resend">
+            <button type="submit" class="btn btn-resend" id="resendBtn" disabled>
+                <i class="bi bi-arrow-clockwise me-2"></i>Resend Code
+            </button>
+        </form>
+
+        <div class="text-center mt-3">
+            <a href="{{ url_for('auth.register') }}" class="auth-link">
+                <i class="bi bi-arrow-left me-1"></i>Back to Register
+            </a>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+/* OTP input boxes — auto-advance, backspace, paste support */
+var boxes = [0,1,2,3,4,5].map(function(i){ return document.getElementById('d'+i); });
+
+boxes.forEach(function(box, idx) {
+    box.addEventListener('input', function() {
+        var v = this.value.replace(/\D/g, '');
+        this.value = v ? v[0] : '';
+        this.classList.toggle('filled', !!this.value);
+        if (this.value && idx < 5) boxes[idx+1].focus();
+        updateHidden();
+    });
+    box.addEventListener('keydown', function(e) {
+        if (e.key === 'Backspace' && !this.value && idx > 0) {
+            boxes[idx-1].value = '';
+            boxes[idx-1].classList.remove('filled');
+            boxes[idx-1].focus();
+            updateHidden();
+        }
+    });
+});
+
+/* Paste support */
+document.getElementById('d0').addEventListener('paste', function(e) {
+    e.preventDefault();
+    var pasted = (e.clipboardData || window.clipboardData).getData('text').replace(/\D/g,'').slice(0,6);
+    pasted.split('').forEach(function(ch, i) {
+        if (boxes[i]) { boxes[i].value = ch; boxes[i].classList.add('filled'); }
+    });
+    if (boxes[pasted.length-1]) boxes[pasted.length-1].focus();
+    updateHidden();
+});
+
+function updateHidden() {
+    document.getElementById('otpHidden').value = boxes.map(function(b){ return b.value; }).join('');
+}
+
+document.getElementById('otpForm').addEventListener('submit', function() {
+    updateHidden();
+    var btn = document.getElementById('verifyBtn');
+    btn.innerHTML = '<i class="bi bi-arrow-repeat spin me-2"></i>Verifying...';
+    btn.disabled = true;
+});
+
+/* Countdown timer */
+var secs = 60;
+var timer = setInterval(function() {
+    secs--;
+    document.getElementById('countdownTimer').textContent = secs;
+    if (secs <= 0) {
+        clearInterval(timer);
+        document.getElementById('countdownWrap').style.display = 'none';
+        document.getElementById('resendBtn').disabled = false;
+    }
+}, 1000);
+
+/* Focus first box */
+boxes[0].focus();
+</script>
+</body>
+</html>

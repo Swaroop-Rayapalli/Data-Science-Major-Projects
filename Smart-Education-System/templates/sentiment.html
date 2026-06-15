@@ -1,0 +1,209 @@
+{% extends "base.html" %}
+
+{% block title %}Sentiment Analysis{% endblock %}
+{% block breadcrumb %}Sentiment Analysis{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <h1 class="page-title">Feedback Sentiment Analysis</h1>
+        <p class="page-subtitle">Classify student feedback as Positive or Negative using NLP</p>
+    </div>
+</div>
+
+<div class="row g-4">
+    <!-- Sentiment Form -->
+    <div class="col-xl-5">
+        <div class="form-card">
+            <div class="form-card-header">
+                <div class="form-card-icon form-card-icon-green">
+                    <i class="bi bi-chat-heart-fill"></i>
+                </div>
+                <div>
+                    <h5 class="form-card-title">Analyze Feedback</h5>
+                    <p class="form-card-subtitle">Enter student feedback text</p>
+                </div>
+            </div>
+
+            <form method="POST" action="{{ url_for('sentiment.analyze') }}" class="form-body" id="sentimentForm">
+                <div class="form-group">
+                    <label class="form-label-custom" for="student_name">
+                        <i class="bi bi-person-fill me-1"></i>Student Name (Optional)
+                    </label>
+                    <input type="text" class="form-control custom-input" id="student_name" name="student_name"
+                           placeholder="Anonymous">
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label-custom" for="feedback">
+                        <i class="bi bi-chat-square-text-fill me-1"></i>Feedback Text
+                    </label>
+                    <textarea class="form-control custom-textarea" id="feedback" name="feedback"
+                              rows="6" placeholder="Enter student feedback here..." required
+                              oninput="updateCharCount(this)"></textarea>
+                    <div class="char-count"><span id="charCount">0</span> characters</div>
+                </div>
+
+                <!-- Quick Feedback Examples -->
+                <div class="quick-examples">
+                    <p class="quick-examples-label">Quick examples:</p>
+                    <button type="button" class="example-btn example-positive"
+                            onclick="setFeedback('The course content was excellent and very well structured. I learned a lot!')">
+                        😊 Positive
+                    </button>
+                    <button type="button" class="example-btn example-negative"
+                            onclick="setFeedback('The classes were boring and the explanations were very confusing.')">
+                        😞 Negative
+                    </button>
+                </div>
+
+                <button type="submit" class="btn-predict btn-predict-green" id="analyzeBtn">
+                    <i class="bi bi-search-heart me-2"></i>
+                    Analyze Sentiment
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Result Panel -->
+    <div class="col-xl-7">
+        {% if result %}
+        <div class="result-card result-card-{{ result.sentiment_class }} animate-in">
+            <div class="result-header">
+                <div class="result-icon" style="font-size: 2.5rem;">{{ result.sentiment_icon }}</div>
+                <div>
+                    <h4 class="result-student-name">{{ result.student_name }}</h4>
+                    <p class="result-subtitle">Sentiment Analysis Result</p>
+                </div>
+            </div>
+
+            <div class="sentiment-display">
+                <div class="sentiment-badge-large sentiment-{{ result.sentiment.lower() }}">
+                    {{ result.sentiment_icon }} {{ result.sentiment }}
+                </div>
+                <div class="confidence-display">
+                    <span class="confidence-label">Confidence</span>
+                    <div class="confidence-bar-wrap">
+                        <div class="confidence-bar"
+                             id="confidenceBar"
+                             data-width="{{ result.confidence }}"
+                             data-color="{{ '#22c55e' if result.sentiment == 'Positive' else '#ef4444' }}">
+                        </div>
+                    </div>
+                    <span class="confidence-value">{{ result.confidence }}%</span>
+                </div>
+            </div>
+
+            <!-- Probability Breakdown -->
+            <div class="proba-breakdown">
+                <h6><i class="bi bi-bar-chart-fill me-2"></i>Probability Distribution</h6>
+                <div class="proba-item">
+                    <span class="proba-label">😊 Positive</span>
+                    <div class="proba-bar-wrap">
+                        <div class="proba-bar proba-bar-positive"
+                             id="probaBarPos"
+                             data-width="{{ result.proba_positive }}">
+                        </div>
+                    </div>
+                    <span class="proba-value">{{ result.proba_positive }}%</span>
+                </div>
+                <div class="proba-item">
+                    <span class="proba-label">😞 Negative</span>
+                    <div class="proba-bar-wrap">
+                        <div class="proba-bar proba-bar-negative"
+                             id="probaBarNeg"
+                             data-width="{{ result.proba_negative }}">
+                        </div>
+                    </div>
+                    <span class="proba-value">{{ result.proba_negative }}%</span>
+                </div>
+            </div>
+
+            <div class="feedback-preview">
+                <h6><i class="bi bi-quote me-2"></i>Analyzed Text</h6>
+                <blockquote class="feedback-quote">{{ result.feedback }}</blockquote>
+            </div>
+        </div>
+        {% else %}
+        <div class="placeholder-card">
+            <div class="placeholder-illustration">
+                <div class="placeholder-circles">
+                    <div class="ph-circle ph-circle-1"></div>
+                    <div class="ph-circle ph-circle-2"></div>
+                    <div class="ph-circle ph-circle-3"></div>
+                </div>
+                <i class="bi bi-chat-heart-fill placeholder-icon" style="color: #22c55e;"></i>
+            </div>
+            <h4 class="placeholder-title">Analyze Student Sentiment</h4>
+            <p class="placeholder-text">Enter student feedback text to classify it as Positive or Negative using our trained Naive Bayes model.</p>
+            <div class="placeholder-features">
+                <span class="ph-feature"><i class="bi bi-check-circle-fill text-success me-1"></i>NLP Classification</span>
+                <span class="ph-feature"><i class="bi bi-check-circle-fill text-success me-1"></i>Confidence Score</span>
+                <span class="ph-feature"><i class="bi bi-check-circle-fill text-success me-1"></i>Trend Tracking</span>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Recent Feedback Table -->
+        {% if recent %}
+        <div class="recent-table-card mt-4">
+            <div class="recent-table-header">
+                <h6><i class="bi bi-clock-history me-2"></i>Recent Analyses</h6>
+            </div>
+            <div class="table-responsive">
+                <table class="table custom-table">
+                    <thead>
+                        <tr>
+                            <th>Student</th>
+                            <th>Feedback</th>
+                            <th>Sentiment</th>
+                            <th>Date</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for f in recent %}
+                        <tr>
+                            <td><strong>{{ f.student_name or 'Anon' }}</strong></td>
+                            <td class="text-muted small">{{ f.feedback[:50] }}{% if f.feedback|length > 50 %}...{% endif %}</td>
+                            <td><span class="badge sentiment-badge sentiment-{{ f.sentiment.lower() }}">{{ f.sentiment }}</span></td>
+                            <td class="text-muted small">{{ f.created_at.strftime('%d %b, %H:%M') }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+function updateCharCount(el) {
+    document.getElementById('charCount').textContent = el.value.length;
+}
+function setFeedback(text) {
+    var ta = document.getElementById('feedback');
+    ta.value = text;
+    updateCharCount(ta);
+}
+document.getElementById('sentimentForm').addEventListener('submit', function() {
+    document.getElementById('analyzeBtn').innerHTML = '<i class="bi bi-arrow-repeat spin me-2"></i>Analyzing...';
+    document.getElementById('analyzeBtn').disabled = true;
+});
+
+// Apply bar widths from data attributes (avoids Jinja inside style= linter errors)
+(function applyBarWidths() {
+    var cb = document.getElementById('confidenceBar');
+    if (cb) {
+        cb.style.width  = cb.getAttribute('data-width') + '%';
+        cb.style.background = cb.getAttribute('data-color');
+    }
+    var pp = document.getElementById('probaBarPos');
+    if (pp) { pp.style.width = pp.getAttribute('data-width') + '%'; }
+    var pn = document.getElementById('probaBarNeg');
+    if (pn) { pn.style.width = pn.getAttribute('data-width') + '%'; }
+})();
+</script>
+{% endblock %}

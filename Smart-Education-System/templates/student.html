@@ -1,0 +1,237 @@
+{% extends "base.html" %}
+
+{% block title %}Student Performance Prediction{% endblock %}
+{% block breadcrumb %}Student Prediction{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <h1 class="page-title">Student Performance Prediction</h1>
+        <p class="page-subtitle">AI-powered performance forecasting using Linear Regression</p>
+    </div>
+</div>
+
+<div class="row g-4">
+    <!-- Prediction Form -->
+    <div class="col-xl-5">
+        <div class="form-card">
+            <div class="form-card-header">
+                <div class="form-card-icon form-card-icon-blue">
+                    <i class="bi bi-person-lines-fill"></i>
+                </div>
+                <div>
+                    <h5 class="form-card-title">Student Details</h5>
+                    <p class="form-card-subtitle">Enter academic information</p>
+                </div>
+            </div>
+
+            <form method="POST" action="{{ url_for('student.predict') }}" class="form-body" id="studentForm">
+                <div class="form-group">
+                    <label class="form-label-custom" for="student_name">
+                        <i class="bi bi-person-fill me-1"></i>Student Name
+                    </label>
+                    <input type="text" class="form-control custom-input" id="student_name" name="student_name"
+                           placeholder="Enter student name" required>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label-custom" for="hours_studied">
+                        <i class="bi bi-clock-fill me-1"></i>Hours Studied per Day
+                        <span class="form-value-display" id="hours_display">0</span>
+                    </label>
+                    <input type="range" class="form-range custom-range" id="hours_studied" name="hours_studied"
+                           min="0" max="12" step="0.5" value="0"
+                           oninput="document.getElementById('hours_display').textContent = this.value + ' hrs'">
+                    <div class="range-labels">
+                        <span>0 hrs</span><span>12 hrs</span>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label-custom" for="previous_scores">
+                        <i class="bi bi-trophy-fill me-1"></i>Previous Scores
+                        <span class="form-value-display" id="scores_display">0</span>
+                    </label>
+                    <input type="range" class="form-range custom-range" id="previous_scores" name="previous_scores"
+                           min="0" max="100" step="1" value="0"
+                           oninput="document.getElementById('scores_display').textContent = this.value + '%'">
+                    <div class="range-labels">
+                        <span>0</span><span>100</span>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label-custom" for="extracurricular">
+                        <i class="bi bi-lightning-fill me-1"></i>Extracurricular Activities
+                    </label>
+                    <div class="toggle-group">
+                        <input type="hidden" name="extracurricular" value="0" id="extra_hidden">
+                        <button type="button" class="toggle-btn active" id="extraNo" onclick="setExtra(0)">
+                            <i class="bi bi-x-circle me-1"></i>No
+                        </button>
+                        <button type="button" class="toggle-btn" id="extraYes" onclick="setExtra(1)">
+                            <i class="bi bi-check-circle me-1"></i>Yes
+                        </button>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label-custom" for="sleep_hours">
+                        <i class="bi bi-moon-stars-fill me-1"></i>Sleep Hours per Night
+                        <span class="form-value-display" id="sleep_display">0</span>
+                    </label>
+                    <input type="range" class="form-range custom-range" id="sleep_hours" name="sleep_hours"
+                           min="0" max="12" step="0.5" value="0"
+                           oninput="document.getElementById('sleep_display').textContent = this.value + ' hrs'">
+                    <div class="range-labels">
+                        <span>0 hrs</span><span>12 hrs</span>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label-custom" for="sample_papers">
+                        <i class="bi bi-journal-check me-1"></i>Sample Papers Practiced
+                        <span class="form-value-display" id="papers_display">0</span>
+                    </label>
+                    <input type="range" class="form-range custom-range" id="sample_papers" name="sample_papers"
+                           min="0" max="10" step="1" value="0"
+                           oninput="document.getElementById('papers_display').textContent = this.value">
+                    <div class="range-labels">
+                        <span>0</span><span>10</span>
+                    </div>
+                </div>
+
+                <button type="submit" class="btn-predict" id="predictBtn">
+                    <i class="bi bi-cpu-fill me-2"></i>
+                    Predict Performance
+                    <span class="btn-loader d-none" id="btnLoader"><i class="bi bi-arrow-repeat spin"></i></span>
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Result Panel -->
+    <div class="col-xl-7">
+        {% if result %}
+        <div class="result-card result-card-{{ result.risk_class }} animate-in" id="resultCard">
+            <div class="result-header">
+                <div class="result-icon">
+                    {% if result.risk_class == 'success' %}🏆
+                    {% elif result.risk_class == 'warning' %}⚠️
+                    {% else %}🚨{% endif %}
+                </div>
+                <div>
+                    <h4 class="result-student-name">{{ result.student_name }}</h4>
+                    <p class="result-subtitle">Performance Prediction Result</p>
+                </div>
+            </div>
+
+            <div class="score-display">
+                <div class="score-circle score-circle-{{ result.risk_class }}">
+                    <div class="score-value">{{ result.predicted_score }}</div>
+                    <div class="score-unit">/ 100</div>
+                </div>
+                <div class="score-info">
+                    <div class="risk-badge-large risk-{{ result.risk_class }}">
+                        <i class="bi bi-{% if result.risk_class == 'success' %}shield-check{% elif result.risk_class == 'warning' %}exclamation-triangle{% else %}exclamation-octagon{% endif %}-fill me-2"></i>
+                        {{ result.risk_level }}
+                    </div>
+                    <div class="score-breakdown">
+                        <div class="breakdown-item">
+                            <span class="breakdown-label">Hours Studied</span>
+                            <span class="breakdown-value">{{ result.hours_studied }} hrs/day</span>
+                        </div>
+                        <div class="breakdown-item">
+                            <span class="breakdown-label">Previous Score</span>
+                            <span class="breakdown-value">{{ result.previous_scores }}%</span>
+                        </div>
+                        <div class="breakdown-item">
+                            <span class="breakdown-label">Sleep Hours</span>
+                            <span class="breakdown-value">{{ result.sleep_hours }} hrs</span>
+                        </div>
+                        <div class="breakdown-item">
+                            <span class="breakdown-label">Sample Papers</span>
+                            <span class="breakdown-value">{{ result.sample_papers }}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="result-recommendation">
+                <h6><i class="bi bi-lightbulb-fill me-2 text-warning"></i>Recommendation</h6>
+                {% if result.risk_class == 'success' %}
+                    <p>Excellent performance predicted! Student shows strong academic habits. Encourage participation in advanced programs and leadership activities.</p>
+                {% elif result.risk_class == 'warning' %}
+                    <p>Moderate performance predicted. Consider increasing study hours or practice papers. Academic counseling may help boost performance.</p>
+                {% else %}
+                    <p>High risk detected. Immediate intervention recommended. Schedule one-on-one mentoring sessions and develop a structured study plan.</p>
+                {% endif %}
+            </div>
+        </div>
+        {% else %}
+        <div class="placeholder-card">
+            <div class="placeholder-illustration">
+                <div class="placeholder-circles">
+                    <div class="ph-circle ph-circle-1"></div>
+                    <div class="ph-circle ph-circle-2"></div>
+                    <div class="ph-circle ph-circle-3"></div>
+                </div>
+                <i class="bi bi-person-lines-fill placeholder-icon"></i>
+            </div>
+            <h4 class="placeholder-title">Predict Student Performance</h4>
+            <p class="placeholder-text">Fill in the student's academic details on the left to get an AI-powered performance prediction with risk assessment.</p>
+            <div class="placeholder-features">
+                <span class="ph-feature"><i class="bi bi-check-circle-fill text-success me-1"></i>Score Prediction</span>
+                <span class="ph-feature"><i class="bi bi-check-circle-fill text-success me-1"></i>Risk Classification</span>
+                <span class="ph-feature"><i class="bi bi-check-circle-fill text-success me-1"></i>Saved to Database</span>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Recent Predictions Table -->
+        {% if recent %}
+        <div class="recent-table-card mt-4">
+            <div class="recent-table-header">
+                <h6><i class="bi bi-clock-history me-2"></i>Recent Predictions</h6>
+            </div>
+            <div class="table-responsive">
+                <table class="table custom-table">
+                    <thead>
+                        <tr>
+                            <th>Student</th>
+                            <th>Score</th>
+                            <th>Risk</th>
+                            <th>Date</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for p in recent %}
+                        <tr>
+                            <td><strong>{{ p.student_name }}</strong></td>
+                            <td><span class="score-pill">{{ "%.1f"|format(p.predicted_score) }}</span></td>
+                            <td><span class="badge risk-badge risk-{{ p.risk_level.lower().replace(' ', '-') }}">{{ p.risk_level }}</span></td>
+                            <td class="text-muted small">{{ p.created_at.strftime('%d %b, %H:%M') }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+function setExtra(val) {
+    document.getElementById('extra_hidden').value = val;
+    document.getElementById('extraNo').classList.toggle('active', val === 0);
+    document.getElementById('extraYes').classList.toggle('active', val === 1);
+}
+document.getElementById('studentForm').addEventListener('submit', function() {
+    document.getElementById('btnLoader').classList.remove('d-none');
+    document.getElementById('predictBtn').disabled = true;
+});
+</script>
+{% endblock %}

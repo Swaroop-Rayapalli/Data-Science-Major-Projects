@@ -1,0 +1,542 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Business Intelligence Suite</title>
+    <meta name="description" content="A unified enterprise decision support system with machine learning integrations for churn prediction, sales forecasting, product recommendations, and property insights.">
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Custom Style Sheet -->
+    <link rel="stylesheet" href="/static/index.css">
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+</head>
+<body>
+    <div class="app-container">
+        <!-- Sidebar Navigation -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <div class="logo-icon"><i class="fa-solid fa-chart-line"></i></div>
+                <div class="logo-text">Smart <span>BI</span></div>
+            </div>
+            
+            <nav class="sidebar-nav">
+                <button class="nav-item active" data-tab="home" id="btn-tab-home">
+                    <i class="fa-solid fa-gauge"></i> Overview
+                </button>
+                <button class="nav-item" data-tab="churn" id="btn-tab-churn">
+                    <i class="fa-solid fa-user-slash"></i> Customer Churn
+                </button>
+                <button class="nav-item" data-tab="sales" id="btn-tab-sales">
+                    <i class="fa-solid fa-arrow-trend-up"></i> Sales Forecast
+                </button>
+                <button class="nav-item" data-tab="recommend" id="btn-tab-recommend">
+                    <i class="fa-solid fa-film"></i> Recommendations
+                </button>
+                <button class="nav-item" data-tab="property" id="btn-tab-property">
+                    <i class="fa-solid fa-building-user"></i> Property Insights
+                </button>
+                <button class="nav-item" data-tab="executive" id="btn-tab-executive">
+                    <i class="fa-solid fa-display"></i> Executive Dashboard
+                </button>
+            </nav>
+            
+            <div class="sidebar-footer">
+                <div class="db-status-container">
+                    <span class="status-dot online"></span>
+                    <span class="status-text" id="sidebar-db-status">DB: SQLite</span>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Workspace -->
+        <main class="main-content">
+            <!-- Global Header -->
+            <header class="top-header">
+                <div class="header-left">
+                    <h1 id="page-title">Executive Suite Overview</h1>
+                    <p class="subtitle" id="page-subtitle">End-to-End Decision Support System</p>
+                </div>
+                <div class="header-right">
+                    <div class="header-widget">
+                        <i class="fa-regular fa-calendar-days"></i>
+                        <span id="current-date">June 8, 2026</span>
+                    </div>
+                    <div class="system-badge" id="system-mode-badge">
+                        <i class="fa-solid fa-circle-check"></i> Connected
+                    </div>
+                </div>
+            </header>
+
+            <!-- TAB: HOME/OVERVIEW -->
+            <section class="tab-pane active" id="tab-home">
+                <!-- KPI metrics Grid -->
+                <div class="kpi-grid">
+                    <div class="kpi-card">
+                        <div class="kpi-info">
+                            <span class="kpi-title">Forecast Revenue</span>
+                            <span class="kpi-value" id="kpi-revenue">₹12,50,000</span>
+                            <span class="kpi-subtext positive"><i class="fa-solid fa-caret-up"></i> +8.2% growth</span>
+                        </div>
+                        <div class="kpi-icon color-blue"><i class="fa-solid fa-indian-rupee-sign"></i></div>
+                    </div>
+                    <div class="kpi-card">
+                        <div class="kpi-info">
+                            <span class="kpi-title">Customers at Risk</span>
+                            <span class="kpi-value" id="kpi-churn">24</span>
+                            <span class="kpi-subtext negative"><i class="fa-solid fa-circle-exclamation"></i> Churn Alert</span>
+                        </div>
+                        <div class="kpi-icon color-red"><i class="fa-solid fa-users-viewfinder"></i></div>
+                    </div>
+                    <div class="kpi-card">
+                        <div class="kpi-info">
+                            <span class="kpi-title">Recommendations Generated</span>
+                            <span class="kpi-value" id="kpi-recommendations">180</span>
+                            <span class="kpi-subtext positive"><i class="fa-solid fa-bolt"></i> Engine Active</span>
+                        </div>
+                        <div class="kpi-icon color-purple"><i class="fa-solid fa-bag-shopping"></i></div>
+                    </div>
+                    <div class="kpi-card">
+                        <div class="kpi-info">
+                            <span class="kpi-title">Properties Evaluated</span>
+                            <span class="kpi-value" id="kpi-properties">96</span>
+                            <span class="kpi-subtext neutral"><i class="fa-regular fa-clock"></i> Live tracking</span>
+                        </div>
+                        <div class="kpi-icon color-teal"><i class="fa-solid fa-house-chimney"></i></div>
+                    </div>
+                </div>
+
+                <!-- Main charts and lists grid -->
+                <div class="dashboard-grid">
+                    <div class="chart-box">
+                        <div class="box-header">
+                            <h3>Churn Risk Distribution</h3>
+                            <span class="box-badge">Live DB Logs</span>
+                        </div>
+                        <div class="chart-container">
+                            <canvas id="chart-churn-pie"></canvas>
+                        </div>
+                    </div>
+
+                    <div class="chart-box">
+                        <div class="box-header">
+                            <h3>Property Valuation Average (by Location)</h3>
+                            <span class="box-badge">Real-Time ML Outputs</span>
+                        </div>
+                        <div class="chart-container">
+                            <canvas id="chart-property-bar"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Recent predictions list -->
+                <div class="table-box">
+                    <div class="box-header">
+                        <h3>System Evaluation Logs</h3>
+                        <span class="box-badge green">Automated Logging Active</span>
+                    </div>
+                    <div class="table-container">
+                        <table id="activity-table">
+                            <thead>
+                                <tr>
+                                    <th>Service Type</th>
+                                    <th>Timestamp</th>
+                                    <th>Prediction Details / Output</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody id="activity-tbody">
+                                <tr>
+                                    <td colspan="4" class="no-data"><i class="fa-solid fa-rotate-right fa-spin"></i> Loading system logs...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- TAB: CUSTOMER CHURN -->
+            <section class="tab-pane" id="tab-churn">
+                <div class="split-pane">
+                    <div class="form-card card">
+                        <div class="card-header">
+                            <h2><i class="fa-solid fa-user-shield"></i> Churn Assessment Form</h2>
+                            <p>Predict if a customer is likely to unsubscribe or churn based on contract and billing metrics.</p>
+                        </div>
+                        <form id="form-churn" class="dashboard-form">
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="churn-gender">Gender</label>
+                                    <select id="churn-gender" name="gender" required>
+                                        <option value="Male">Male</option>
+                                        <option value="Female">Female</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label for="churn-tenure">Tenure (months)</label>
+                                    <input type="number" id="churn-tenure" name="tenure" min="0" max="72" value="12" required>
+                                </div>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="churn-monthly">Monthly Charges (₹)</label>
+                                    <input type="number" id="churn-monthly" name="MonthlyCharges" min="15" max="150" value="80" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="churn-contract">Contract Term</label>
+                                    <select id="churn-contract" name="Contract" required>
+                                        <option value="Month-to-month">Month-to-month</option>
+                                        <option value="One year">One year</option>
+                                        <option value="Two year">Two year</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label for="churn-internet">Internet Service Provider</label>
+                                    <select id="churn-internet" name="InternetService" required>
+                                        <option value="Fiber optic">Fiber optic</option>
+                                        <option value="DSL">DSL</option>
+                                        <option value="No">No Internet Service</option>
+                                    </select>
+                            </div>
+                            <button type="submit" class="btn btn-primary btn-block" id="btn-predict-churn">
+                                <i class="fa-solid fa-brain"></i> Predict Churn Probability
+                            </button>
+                        </form>
+                    </div>
+
+                    <div class="result-card card">
+                        <div class="card-header">
+                            <h2>Evaluation Results</h2>
+                        </div>
+                        <div id="churn-result-placeholder" class="result-placeholder">
+                            <i class="fa-solid fa-chart-pie placeholder-icon"></i>
+                            <p>Submit the customer form on the left to evaluate churn probability and risk status.</p>
+                        </div>
+                        <div id="churn-result-content" class="result-content hide">
+                            <div class="gauge-container">
+                                <svg class="gauge" viewBox="0 0 100 100">
+                                    <circle class="gauge-bg" cx="50" cy="50" r="45"></circle>
+                                    <circle class="gauge-fill" id="churn-gauge-fill" cx="50" cy="50" r="45"></circle>
+                                </svg>
+                                <div class="gauge-text">
+                                    <span class="value" id="churn-result-pct">0%</span>
+                                    <span class="label">Churn Risk</span>
+                                </div>
+                            </div>
+                            
+                            <div class="alert-banner" id="churn-alert-banner">
+                                <i class="fa-solid fa-circle-exclamation"></i>
+                                <span class="alert-title" id="churn-alert-title">High Risk Customer</span>
+                            </div>
+
+                            <div class="results-breakdown">
+                                <h3>Assessment Summary</h3>
+                                <div class="breakdown-row">
+                                    <span class="label">Status:</span>
+                                    <span class="value badge" id="churn-result-label">Churn</span>
+                                </div>
+                                <div class="breakdown-row">
+                                    <span class="label">Risk Probability:</span>
+                                    <span class="value" id="churn-result-prob">92%</span>
+                                </div>
+                                <div class="breakdown-row">
+                                    <span class="label">Database Logging:</span>
+                                    <span class="value text-success"><i class="fa-regular fa-circle-check"></i> Saved successfully</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- TAB: SALES FORECAST -->
+            <section class="tab-pane" id="tab-sales">
+                <div class="forecast-workspace">
+                    <div class="upload-control-panel card">
+                        <div class="card-header">
+                            <h2><i class="fa-solid fa-cloud-arrow-up"></i> Sales CSV Data Integration</h2>
+                            <p>Upload your historic daily transaction dataset to forecast sales metrics using Meta's Prophet model.</p>
+                        </div>
+                        
+                        <div class="drop-zone" id="csv-drop-zone">
+                            <i class="fa-solid fa-file-csv upload-icon"></i>
+                            <p class="drop-text">Drag &amp; drop your <code>sales.csv</code> here or <span class="browse-link">browse files</span></p>
+                            <p class="drop-hint">Auto-detects columns &mdash; <code>date / order_date / timestamp</code> &amp; <code>sales / revenue / amount / total</code></p>
+                            <input type="file" id="csv-file-input" accept=".csv" class="hide">
+                            <div class="file-details hide" id="upload-file-details">
+                                <span class="file-name" id="selected-file-name">sales.csv</span>
+                                <button type="button" class="btn-clear" id="btn-clear-file"><i class="fa-solid fa-xmark"></i></button>
+                            </div>
+                        </div>
+
+                        <div class="form-group period-selector-group">
+                            <label for="sales-periods">Forecast Horizon (Days)</label>
+                            <select id="sales-periods">
+                                <option value="30">Next 30 Days (Short-term)</option>
+                                <option value="90" selected>Next 90 Days (Medium-term)</option>
+                                <option value="180">Next 180 Days (Semi-Annual)</option>
+                                <option value="365">Next 365 Days (Annual)</option>
+                            </select>
+                        </div>
+
+                        <div class="action-buttons-row">
+                            <button type="button" class="btn btn-secondary" id="btn-load-demo-csv">
+                                <i class="fa-solid fa-database"></i> Load Sample CSV Data
+                            </button>
+                            <button type="button" class="btn btn-primary" id="btn-run-forecast">
+                                <i class="fa-solid fa-wand-magic-sparkles"></i> Forecast Future Sales
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Forecast Output details -->
+                    <div class="forecast-results card hide" id="sales-result-container">
+                        <div class="box-header">
+                            <h2>Future Revenue Forecast</h2>
+                            <div class="kpi-badge-group">
+                                <span class="badge badge-purple" id="sales-forecast-kpi-total">Total: ₹12,50,000</span>
+                                <span class="badge badge-green" id="sales-forecast-kpi-growth">+8.2% growth</span>
+                            </div>
+                        </div>
+                        
+                        <div class="forecast-chart-container">
+                            <canvas id="chart-sales-forecast"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- TAB: RECOMMENDATIONS -->
+            <section class="tab-pane" id="tab-recommend">
+                <div class="recommender-container">
+                    <div class="selector-card card">
+                        <div class="card-header">
+                            <h2><i class="fa-solid fa-clapperboard"></i> Movie Recommendation Engine</h2>
+                            <p>Tell us what you're in the mood for — our collaborative filtering model will find the perfect films for you.</p>
+                        </div>
+
+                        <div class="dashboard-form">
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="rec-genre"><i class="fa-solid fa-masks-theater"></i> Favourite Genre</label>
+                                    <select id="rec-genre">
+                                        <option value="Action">🎬 Action</option>
+                                        <option value="Comedy">😂 Comedy</option>
+                                        <option value="Drama">🎭 Drama</option>
+                                        <option value="Horror">👻 Horror</option>
+                                        <option value="Romance">💕 Romance</option>
+                                        <option value="Sci-Fi">🚀 Sci-Fi</option>
+                                        <option value="Thriller">🔪 Thriller</option>
+                                        <option value="Animation">🎨 Animation</option>
+                                        <option value="Documentary">📽️ Documentary</option>
+                                        <option value="Adventure">🗺️ Adventure</option>
+                                        <option value="Mystery">🔍 Mystery</option>
+                                        <option value="Crime">🕵️ Crime</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label for="rec-mood"><i class="fa-solid fa-face-smile"></i> Current Mood</label>
+                                    <select id="rec-mood">
+                                        <option value="exciting">⚡ Exciting &amp; Thrilling</option>
+                                        <option value="feel-good">😊 Feel-Good &amp; Uplifting</option>
+                                        <option value="emotional">💧 Emotional &amp; Deep</option>
+                                        <option value="scary">😱 Scary &amp; Suspenseful</option>
+                                        <option value="thoughtful">🤔 Thought-Provoking</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="rec-era"><i class="fa-regular fa-calendar"></i> Preferred Era</label>
+                                    <select id="rec-era">
+                                        <option value="modern">🆕 Modern (2010s – Present)</option>
+                                        <option value="2000s">📀 2000s (2000 – 2009)</option>
+                                        <option value="90s">📼 90s (1990 – 1999)</option>
+                                        <option value="classic">🎞️ Classic (Before 1990)</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label for="rec-lang"><i class="fa-solid fa-language"></i> Language</label>
+                                    <select id="rec-lang">
+                                        <option value="english">🇬🇧 English</option>
+                                        <option value="hindi">🇮🇳 Hindi (Bollywood)</option>
+                                        <option value="telugu">🎬 Telugu (Tollywood)</option>
+                                        <option value="korean">🇰🇷 Korean</option>
+                                        <option value="japanese">🇯🇵 Japanese</option>
+                                        <option value="french">🇫🇷 French</option>
+                                        <option value="spanish">🇪🇸 Spanish</option>
+                                        <option value="german">🇩🇪 German</option>
+                                        <option value="italian">🇮🇹 Italian</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <button type="button" class="btn btn-primary btn-block" id="btn-generate-rec">
+                                <i class="fa-solid fa-wand-magic-sparkles"></i> Find My Movies
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="recommendations-display">
+                        <div class="box-header">
+                            <h3>Recommended Movies</h3>
+                            <span class="box-badge" id="rec-seed-badge">Collaborative Filtering · Content-Based Model</span>
+                        </div>
+
+                        <div class="recommendations-grid" id="recommendations-grid">
+                            <!-- Placeholder -->
+                            <div class="rec-card placeholder">
+                                <div class="rec-icon"><i class="fa-solid fa-film"></i></div>
+                                <div class="rec-title">No Recommendations Yet</div>
+                                <div class="rec-category">Choose your genre, mood &amp; era above to get personalised picks.</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+
+            <!-- TAB: PROPERTY INSIGHTS -->
+            <section class="tab-pane" id="tab-property">
+                <div class="split-pane">
+                    <div class="form-card card">
+                        <div class="card-header">
+                            <h2><i class="fa-solid fa-house-laptop"></i> Real Estate Valuation Form</h2>
+                            <p>Estimate the fair market value of real estate properties based on local parameters and dimensions.</p>
+                        </div>
+                        <form id="form-property" class="dashboard-form">
+                            <div class="form-group">
+                                <label for="property-area">Property Area (sq. ft.)</label>
+                                <input type="number" id="property-area" name="area" min="500" max="10000" value="1500" required>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="property-bedrooms">Bedrooms</label>
+                                    <input type="number" id="property-bedrooms" name="bedrooms" min="1" max="10" value="3" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="property-bathrooms">Bathrooms</label>
+                                    <input type="number" id="property-bathrooms" name="bathrooms" min="1" max="8" value="2" required>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label for="property-location">Neighborhood Location Profile</label>
+                                <select id="property-location" name="location" required>
+                                    <option value="low">Industrial / Rural Sector — Affordable Housing (low crime, basic amenities)</option>
+                                    <option value="medium" selected>Medium Class Suburban — Average Schools &amp; Safety</option>
+                                    <option value="premium">Premium Elite Sector — Top Ranked Schools, Low Crime</option>
+                                </select>
+                            </div>
+                            <button type="submit" class="btn btn-primary btn-block" id="btn-predict-price">
+                                <i class="fa-solid fa-coins"></i> Estimate Fair Market Price
+                            </button>
+                        </form>
+                    </div>
+
+                    <div class="result-card card">
+                        <div class="card-header">
+                            <h2>Market Valuation Report</h2>
+                        </div>
+                        <div id="property-result-placeholder" class="result-placeholder">
+                            <i class="fa-solid fa-house-circle-check placeholder-icon"></i>
+                            <p>Submit property configuration inputs to estimate property price using the evaluation model.</p>
+                        </div>
+                        
+                        <div id="property-result-content" class="result-content price-result-view hide">
+                            <span class="report-tag">ESTIMATED VALUATION</span>
+                            
+                            <div class="price-display-box">
+                                <div class="price-symbol">₹</div>
+                                <div class="price-value" id="property-price-value">85,00,000</div>
+                            </div>
+                            
+                            <div class="results-breakdown">
+                                <h3>Valuation Features</h3>
+                                <div class="breakdown-row">
+                                    <span class="label">Area Unit Value:</span>
+                                    <span class="value" id="property-breakdown-rate">₹5,666 / sq ft</span>
+                                </div>
+                                <div class="breakdown-row">
+                                    <span class="label">Configuration:</span>
+                                    <span class="value" id="property-breakdown-config">3 BHK</span>
+                                </div>
+                                <div class="breakdown-row">
+                                    <span class="label">Location Class:</span>
+                                    <span class="value" id="property-breakdown-location">Medium</span>
+                                </div>
+                                <div class="breakdown-row">
+                                    <span class="label">Database Sync Status:</span>
+                                    <span class="value text-success"><i class="fa-regular fa-circle-check"></i> Inserted in logs</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- TAB: EXECUTIVE DASHBOARD (POWER BI) -->
+            <section class="tab-pane" id="tab-executive">
+                <div class="powerbi-wrapper">
+                    <!-- Configured Power BI Embed Link -->
+                    <div id="powerbi-embed-container" class="embed-container hide">
+                        <iframe id="powerbi-iframe" src="" frameborder="0" allowFullScreen="true"></iframe>
+                    </div>
+                    
+                    <!-- Fallback / Simulated Executive Interactive Dashboard -->
+                    <div id="powerbi-fallback" class="pbi-fallback-dashboard">
+                        <div class="pbi-banner">
+                            <div class="pbi-banner-content">
+                                <h2><i class="fa-solid fa-chart-pie"></i> Executive Power BI Dashboard</h2>
+                                <p id="pbi-banner-desc">Power BI report embedded live. (Simulating live database logs reporting. Enter a custom URL in System Config to override).</p>
+                            </div>
+                            <span class="pbi-badge"><i class="fa-solid fa-server"></i> Live Supabase Connect</span>
+                        </div>
+                        
+                        <div class="pbi-visual-grid">
+                            <div class="pbi-card-visual">
+                                <h3>Total Evaluations</h3>
+                                <div class="pbi-big-num" id="pbi-val-total">0</div>
+                                <div class="pbi-trend-label text-success"><i class="fa-solid fa-arrow-trend-up"></i> Live updates</div>
+                            </div>
+                            <div class="pbi-card-visual">
+                                <h3>Average Property Evaluated</h3>
+                                <div class="pbi-big-num" id="pbi-val-prop">₹85.0L</div>
+                                <div class="pbi-trend-label text-muted">Average ML evaluation</div>
+                            </div>
+                            <div class="pbi-card-visual">
+                                <h3>Risk Churn Rate</h3>
+                                <div class="pbi-big-num" id="pbi-val-churn">0%</div>
+                                <div class="pbi-trend-label text-danger" id="pbi-val-churn-trend"><i class="fa-solid fa-arrow-trend-down"></i> Under control</div>
+                            </div>
+                        </div>
+                        
+                        <div class="pbi-chart-grid">
+                            <div class="pbi-chart-box">
+                                <h4>Predictive Service Usage Log</h4>
+                                <div class="chart-container-pbi">
+                                    <canvas id="pbi-chart-usage"></canvas>
+                                </div>
+                            </div>
+                            <div class="pbi-chart-box">
+                                <h4>Top Recommended Products</h4>
+                                <div class="chart-container-pbi">
+                                    <canvas id="pbi-chart-products"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+              </section>
+        </main>
+    </div>
+    
+    <!-- Client Side App JS -->
+    <script src="/static/app.js"></script>
+</body>
+</html>

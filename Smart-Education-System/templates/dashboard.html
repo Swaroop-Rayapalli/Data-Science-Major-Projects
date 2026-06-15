@@ -1,0 +1,346 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard{% endblock %}
+{% block breadcrumb %}Dashboard{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <h1 class="page-title">Analytics Dashboard</h1>
+        <p class="page-subtitle">Real-time overview of all platform modules</p>
+    </div>
+    <div class="page-header-actions">
+        <span class="status-badge status-live">
+            <span class="status-dot"></span>Live
+        </span>
+    </div>
+</div>
+
+<!-- Summary Cards -->
+<div class="row g-4 mb-4">
+    <div class="col-xl-3 col-md-6">
+        <div class="stat-card stat-card-blue">
+            <div class="stat-card-icon">
+                <i class="bi bi-people-fill"></i>
+            </div>
+            <div class="stat-card-content">
+                <div class="stat-value">{{ total_students }}</div>
+                <div class="stat-label">Total Students</div>
+                <div class="stat-sub">Performance Predictions</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-xl-3 col-md-6">
+        <div class="stat-card stat-card-green">
+            <div class="stat-card-icon">
+                <i class="bi bi-graph-up-arrow"></i>
+            </div>
+            <div class="stat-card-content">
+                <div class="stat-value">{{ avg_score }}</div>
+                <div class="stat-label">Average Score</div>
+                <div class="stat-sub">Predicted Performance</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-xl-3 col-md-6">
+        <div class="stat-card stat-card-purple">
+            <div class="stat-card-icon">
+                <i class="bi bi-emoji-smile-fill"></i>
+            </div>
+            <div class="stat-card-content">
+                <div class="stat-value">{{ positive_pct }}%</div>
+                <div class="stat-label">Positive Feedback</div>
+                <div class="stat-sub">of {{ total_feedback }} responses</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-xl-3 col-md-6">
+        <div class="stat-card stat-card-orange">
+            <div class="stat-card-icon">
+                <i class="bi bi-file-earmark-person-fill"></i>
+            </div>
+            <div class="stat-card-content">
+                <div class="stat-value">{{ total_resumes }}</div>
+                <div class="stat-label">Resumes Screened</div>
+                <div class="stat-sub">Avg match: {{ avg_match }}%</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Charts Row -->
+<div class="row g-4 mb-4">
+    <!-- Risk Distribution -->
+    <div class="col-xl-4 col-md-6">
+        <div class="chart-card">
+            <div class="chart-card-header">
+                <h5 class="chart-title"><i class="bi bi-pie-chart-fill me-2 text-primary"></i>Risk Distribution</h5>
+                <span class="chart-badge">Students</span>
+            </div>
+            <div class="chart-body">
+                {% if total_students > 0 %}
+                    <canvas id="riskChart" height="220"></canvas>
+                {% else %}
+                    <div class="empty-chart">
+                        <i class="bi bi-bar-chart"></i>
+                        <p>No student data yet</p>
+                        <a href="{{ url_for('student.predict') }}" class="btn btn-sm btn-primary">Add Student</a>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Sentiment Distribution -->
+    <div class="col-xl-4 col-md-6">
+        <div class="chart-card">
+            <div class="chart-card-header">
+                <h5 class="chart-title"><i class="bi bi-chat-square-heart-fill me-2 text-success"></i>Sentiment Distribution</h5>
+                <span class="chart-badge">Feedback</span>
+            </div>
+            <div class="chart-body">
+                {% if total_feedback > 0 %}
+                    <canvas id="sentimentChart" height="220"></canvas>
+                {% else %}
+                    <div class="empty-chart">
+                        <i class="bi bi-chat-heart"></i>
+                        <p>No feedback data yet</p>
+                        <a href="{{ url_for('sentiment.analyze') }}" class="btn btn-sm btn-success">Analyze Feedback</a>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Resume Categories -->
+    <div class="col-xl-4 col-md-6">
+        <div class="chart-card">
+            <div class="chart-card-header">
+                <h5 class="chart-title"><i class="bi bi-briefcase-fill me-2 text-warning"></i>Top Resume Categories</h5>
+                <span class="chart-badge">Placements</span>
+            </div>
+            <div class="chart-body">
+                {% if total_resumes > 0 %}
+                    <canvas id="resumeChart" height="220"></canvas>
+                {% else %}
+                    <div class="empty-chart">
+                        <i class="bi bi-file-earmark-person"></i>
+                        <p>No resume data yet</p>
+                        <a href="{{ url_for('resume.screen') }}" class="btn btn-sm btn-warning">Screen Resume</a>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Recent Activity Row -->
+<div class="row g-4">
+    <!-- Recent Student Predictions -->
+    <div class="col-xl-4">
+        <div class="activity-card">
+            <div class="activity-card-header">
+                <h5 class="activity-title"><i class="bi bi-person-lines-fill me-2"></i>Recent Predictions</h5>
+                <a href="{{ url_for('student.predict') }}" class="activity-link">View All <i class="bi bi-arrow-right"></i></a>
+            </div>
+            <div class="activity-list">
+                {% if recent_students %}
+                    {% for s in recent_students %}
+                    <div class="activity-item">
+                        <div class="activity-avatar activity-avatar-blue">
+                            {{ s.student_name[0].upper() }}
+                        </div>
+                        <div class="activity-info">
+                            <div class="activity-name">{{ s.student_name }}</div>
+                            <div class="activity-meta">Score: <strong>{{ "%.1f"|format(s.predicted_score) }}</strong></div>
+                        </div>
+                        <span class="badge risk-badge risk-{{ s.risk_level.lower().replace(' ', '-') }}">{{ s.risk_level }}</span>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="activity-empty">
+                        <i class="bi bi-inbox"></i>
+                        <p>No predictions yet</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Feedback -->
+    <div class="col-xl-4">
+        <div class="activity-card">
+            <div class="activity-card-header">
+                <h5 class="activity-title"><i class="bi bi-chat-heart-fill me-2"></i>Recent Feedback</h5>
+                <a href="{{ url_for('sentiment.analyze') }}" class="activity-link">View All <i class="bi bi-arrow-right"></i></a>
+            </div>
+            <div class="activity-list">
+                {% if recent_feedback %}
+                    {% for f in recent_feedback %}
+                    <div class="activity-item">
+                        <div class="activity-avatar {% if f.sentiment == 'Positive' %}activity-avatar-green{% else %}activity-avatar-red{% endif %}">
+                            {% if f.sentiment == 'Positive' %}😊{% else %}😞{% endif %}
+                        </div>
+                        <div class="activity-info">
+                            <div class="activity-name">{{ f.student_name or 'Anonymous' }}</div>
+                            <div class="activity-meta">{{ f.feedback[:40] }}{% if f.feedback|length > 40 %}...{% endif %}</div>
+                        </div>
+                        <span class="badge sentiment-badge sentiment-{{ f.sentiment.lower() }}">{{ f.sentiment }}</span>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="activity-empty">
+                        <i class="bi bi-inbox"></i>
+                        <p>No feedback yet</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Resumes -->
+    <div class="col-xl-4">
+        <div class="activity-card">
+            <div class="activity-card-header">
+                <h5 class="activity-title"><i class="bi bi-file-earmark-person-fill me-2"></i>Recent Resumes</h5>
+                <a href="{{ url_for('resume.screen') }}" class="activity-link">View All <i class="bi bi-arrow-right"></i></a>
+            </div>
+            <div class="activity-list">
+                {% if recent_resumes %}
+                    {% for r in recent_resumes %}
+                    <div class="activity-item">
+                        <div class="activity-avatar activity-avatar-orange">
+                            {{ r.candidate_name[0].upper() }}
+                        </div>
+                        <div class="activity-info">
+                            <div class="activity-name">{{ r.candidate_name }}</div>
+                            <div class="activity-meta">{{ r.category }}</div>
+                        </div>
+                        <span class="match-score-badge">{{ r.match_score }}%</span>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="activity-empty">
+                        <i class="bi bi-inbox"></i>
+                        <p>No resumes yet</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Quick Action Buttons -->
+<div class="row g-3 mt-2">
+    <div class="col-12">
+        <div class="quick-actions-card">
+            <h6 class="quick-actions-title">Quick Actions</h6>
+            <div class="quick-actions-list">
+                <a href="{{ url_for('student.predict') }}" class="quick-action-btn quick-action-blue">
+                    <i class="bi bi-plus-circle-fill"></i>
+                    New Prediction
+                </a>
+                <a href="{{ url_for('sentiment.analyze') }}" class="quick-action-btn quick-action-green">
+                    <i class="bi bi-chat-plus-fill"></i>
+                    Analyze Feedback
+                </a>
+                <a href="{{ url_for('resume.screen') }}" class="quick-action-btn quick-action-orange">
+                    <i class="bi bi-upload"></i>
+                    Screen Resume
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+{%- set _low  = low_risk        | default(0) -%}
+{%- set _mid  = medium_risk     | default(0) -%}
+{%- set _high = high_risk       | default(0) -%}
+{%- set _pos  = positive_count  | default(0) -%}
+{%- set _neg  = negative_count  | default(0) -%}
+
+<!-- Chart data passed via JSON — VS Code does NOT lint application/json as JS -->
+<script id="chartData" type="application/json">
+{
+  "hasStudents":   {{ (total_students > 0) | tojson }},
+  "riskData":      [{{ _low }}, {{ _mid }}, {{ _high }}],
+  "hasFeedback":   {{ (total_feedback > 0) | tojson }},
+  "sentimentData": [{{ _pos }}, {{ _neg }}],
+  "hasResumes":    {{ (total_resumes > 0 and top_categories) | tojson }},
+  "resumeLabels":  [{% for cat, cnt in top_categories %}"{{ cat }}"{% if not loop.last %}, {% endif %}{% endfor %}],
+  "resumeData":    [{% for cat, cnt in top_categories %}{{ cnt }}{% if not loop.last %}, {% endif %}{% endfor %}]
+}
+</script>
+
+<script>
+/* Completely Jinja-free — reads data from the JSON carrier above */
+var CHART_DATA = JSON.parse(document.getElementById('chartData').textContent);
+
+var chartDefaults = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+        legend: {
+            labels: { color: '#94a3b8', font: { family: 'Inter', size: 12 }, padding: 15 }
+        }
+    }
+};
+
+if (CHART_DATA.hasStudents) {
+    new Chart(document.getElementById('riskChart'), {
+        type: 'doughnut',
+        data: {
+            labels: ['Low Risk', 'Medium Risk', 'High Risk'],
+            datasets: [{
+                data: CHART_DATA.riskData,
+                backgroundColor: ['#22c55e', '#f59e0b', '#ef4444'],
+                borderWidth: 0,
+                hoverOffset: 8
+            }]
+        },
+        options: Object.assign({}, chartDefaults, { cutout: '65%' })
+    });
+}
+
+if (CHART_DATA.hasFeedback) {
+    new Chart(document.getElementById('sentimentChart'), {
+        type: 'doughnut',
+        data: {
+            labels: ['Positive', 'Negative'],
+            datasets: [{
+                data: CHART_DATA.sentimentData,
+                backgroundColor: ['#22c55e', '#ef4444'],
+                borderWidth: 0,
+                hoverOffset: 8
+            }]
+        },
+        options: Object.assign({}, chartDefaults, { cutout: '65%' })
+    });
+}
+
+if (CHART_DATA.hasResumes) {
+    new Chart(document.getElementById('resumeChart'), {
+        type: 'bar',
+        data: {
+            labels: CHART_DATA.resumeLabels,
+            datasets: [{
+                label: 'Resumes',
+                data: CHART_DATA.resumeData,
+                backgroundColor: ['#6366f1','#8b5cf6','#a78bfa','#c4b5fd','#ddd6fe','#ede9fe'],
+                borderRadius: 6,
+                borderWidth: 0
+            }]
+        },
+        options: Object.assign({}, chartDefaults, {
+            scales: {
+                y: { ticks: { color: '#64748b' }, grid: { color: 'rgba(148,163,184,0.1)' } },
+                x: { ticks: { color: '#64748b' }, grid: { display: false } }
+            },
+            plugins: { legend: { display: false } }
+        })
+    });
+}
+</script>
+{% endblock %}

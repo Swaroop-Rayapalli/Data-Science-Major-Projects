@@ -1,0 +1,378 @@
+{% extends "base.html" %}
+
+{% block title %}Resume Screening{% endblock %}
+{% block breadcrumb %}Resume Screening{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <h1 class="page-title">Resume Screening & Ranking</h1>
+        <p class="page-subtitle">Upload PDF resumes for AI-powered category classification and scoring</p>
+    </div>
+</div>
+
+<div class="row g-4">
+    <!-- Resume Upload Form -->
+    <div class="col-xl-5">
+        <div class="form-card">
+            <div class="form-card-header">
+                <div class="form-card-icon form-card-icon-orange">
+                    <i class="bi bi-file-earmark-person-fill"></i>
+                </div>
+                <div>
+                    <h5 class="form-card-title">Upload Resume</h5>
+                    <p class="form-card-subtitle">PDF format only (max 16MB)</p>
+                </div>
+            </div>
+
+            <form method="POST" action="{{ url_for('resume.screen') }}" enctype="multipart/form-data" class="form-body" id="resumeForm">
+                <div class="form-group">
+                    <label class="form-label-custom" for="candidate_name">
+                        <i class="bi bi-person-badge-fill me-1"></i>Candidate Name
+                    </label>
+                    <input type="text" class="form-control custom-input" id="candidate_name" name="candidate_name"
+                           placeholder="Enter candidate name" required>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label-custom">
+                        <i class="bi bi-upload me-1"></i>Resume File (PDF)
+                    </label>
+                    <div class="file-upload-area" id="uploadArea" onclick="document.getElementById('resume_file').click()">
+                        <div class="file-upload-icon">
+                            <i class="bi bi-cloud-arrow-up-fill"></i>
+                        </div>
+                        <div class="file-upload-text">
+                            <p class="file-upload-primary">Click or drag & drop PDF here</p>
+                            <p class="file-upload-secondary">Supports: PDF files only</p>
+                        </div>
+                        <div class="file-selected d-none" id="fileSelected">
+                            <i class="bi bi-file-pdf-fill text-danger me-2"></i>
+                            <span id="fileName"></span>
+                        </div>
+                    </div>
+                    <input type="file" id="resume_file" name="resume_file" accept=".pdf" class="d-none"
+                           onchange="handleFileSelect(this)" required>
+                </div>
+
+                <!-- Workflow Steps -->
+                <div class="workflow-steps">
+                    <div class="workflow-step">
+                        <div class="ws-number">1</div>
+                        <span>Upload PDF</span>
+                    </div>
+                    <div class="ws-arrow"><i class="bi bi-arrow-right"></i></div>
+                    <div class="workflow-step">
+                        <div class="ws-number">2</div>
+                        <span>Extract Text</span>
+                    </div>
+                    <div class="ws-arrow"><i class="bi bi-arrow-right"></i></div>
+                    <div class="workflow-step">
+                        <div class="ws-number">3</div>
+                        <span>TF-IDF</span>
+                    </div>
+                    <div class="ws-arrow"><i class="bi bi-arrow-right"></i></div>
+                    <div class="workflow-step">
+                        <div class="ws-number">4</div>
+                        <span>Classify</span>
+                    </div>
+                </div>
+
+                <button type="submit" class="btn-predict btn-predict-orange" id="rankBtn">
+                    <i class="bi bi-stars me-2"></i>
+                    Rank Resume
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Result Panel -->
+    <div class="col-xl-7">
+        {% if result %}
+        <div class="result-card result-card-orange animate-in">
+            <div class="result-header">
+                <div class="result-icon">📄</div>
+                <div>
+                    <h4 class="result-student-name">{{ result.candidate_name }}</h4>
+                    <p class="result-subtitle">{{ result.filename }}</p>
+                </div>
+            </div>
+
+            <!-- Category Badge -->
+            <div class="resume-category-display">
+                <div class="category-icon">
+                    <i class="bi bi-briefcase-fill"></i>
+                </div>
+                <div class="category-info">
+                    <div class="category-label">Predicted Category</div>
+                    <div class="category-name">{{ result.category }}</div>
+                </div>
+                <div class="match-score-display">
+                    <div class="match-score-value">{{ result.match_score }}</div>
+                    <div class="match-score-unit">% Match</div>
+                </div>
+            </div>
+
+            <!-- Match Score Bar -->
+            <div class="match-score-section">
+                <div class="match-score-header">
+                    <span>Profile Match Score</span>
+                    <span class="match-score-pct">{{ result.match_score }}%</span>
+                </div>
+                <div class="match-bar-wrap">
+                    <div class="match-bar" id="matchBar" data-score="{{ result.match_score }}"></div>
+                </div>
+                <div class="match-labels">
+                    <span>Low Match</span>
+                    <span>Good Match</span>
+                    <span>Excellent</span>
+                </div>
+            </div>
+
+            <!-- Stats Row -->
+            <div class="resume-stats">
+                <div class="resume-stat">
+                    <i class="bi bi-file-word-fill"></i>
+                    <span class="rs-value">{{ result.word_count }}</span>
+                    <span class="rs-label">Words</span>
+                </div>
+                <div class="resume-stat">
+                    <i class="bi bi-link-45deg text-info"></i>
+                    <span class="rs-value">{{ result.hyperlinks | length }}</span>
+                    <span class="rs-label">Links Found</span>
+                </div>
+                <div class="resume-stat">
+                    <i class="bi bi-check-circle-fill text-success"></i>
+                    <span class="rs-value">{{ result.suggestions.found_keywords | length }}</span>
+                    <span class="rs-label">Keywords Hit</span>
+                </div>
+                <div class="resume-stat">
+                    <i class="bi bi-database-fill"></i>
+                    <span class="rs-value">Saved</span>
+                    <span class="rs-label">To DB</span>
+                </div>
+            </div>
+
+            <!-- Text Preview -->
+            <div class="text-preview-section">
+                <h6><i class="bi bi-eye-fill me-2"></i>Extracted Text Preview</h6>
+                <div class="text-preview-box">{{ result.text_preview }}</div>
+            </div>
+        </div>
+
+        <!-- ── Hyperlinks Panel ── -->
+        {% if result.hyperlinks %}
+        <div class="suggestions-card mt-4">
+            <div class="suggestions-header">
+                <i class="bi bi-link-45deg suggestions-header-icon" style="color:#38bdf8;"></i>
+                <div>
+                    <h6 class="suggestions-title">Hyperlinks Extracted from PDF</h6>
+                    <p class="suggestions-subtitle">{{ result.hyperlinks | length }} link(s) found — clickable annotations + inline URLs</p>
+                </div>
+            </div>
+            <div class="links-grid">
+                {% for link in result.hyperlinks %}
+                <a href="{{ link }}" target="_blank" rel="noopener noreferrer" class="link-chip">
+                    <i class="bi bi-box-arrow-up-right me-1"></i>
+                    <span class="link-chip-text">{{ link | truncate(55, True, '…') }}</span>
+                </a>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- ── Career Suggestions Panel ── -->
+        {% set s = result.suggestions %}
+        <div class="suggestions-card mt-4">
+            <div class="suggestions-header">
+                <i class="bi bi-lightbulb-fill suggestions-header-icon" style="color:#f59e0b;"></i>
+                <div>
+                    <h6 class="suggestions-title">Career Improvement Suggestions</h6>
+                    <p class="suggestions-subtitle suggestions-urgency suggestions-urgency-{{ s.urgency_class }}">
+                        {{ s.urgency }}
+                    </p>
+                </div>
+            </div>
+
+            <!-- Keyword Radar -->
+            <div class="keyword-radar mb-4">
+                <div class="keyword-col">
+                    <div class="keyword-col-label kw-found"><i class="bi bi-check2-circle me-1"></i>Keywords Found</div>
+                    <div class="keyword-tags">
+                        {% for kw in s.found_keywords %}
+                        <span class="kw-tag kw-tag-found">{{ kw }}</span>
+                        {% else %}
+                        <span class="kw-tag kw-tag-none">None detected</span>
+                        {% endfor %}
+                    </div>
+                </div>
+                <div class="keyword-col">
+                    <div class="keyword-col-label kw-missing"><i class="bi bi-x-circle me-1"></i>Keywords Missing</div>
+                    <div class="keyword-tags">
+                        {% for kw in s.missing_keywords %}
+                        <span class="kw-tag kw-tag-missing">{{ kw }}</span>
+                        {% else %}
+                        <span class="kw-tag kw-tag-none">All covered!</span>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- 4-column suggestion grid -->
+            <div class="sugg-grid">
+                <!-- Skills to Add -->
+                <div class="sugg-col">
+                    <div class="sugg-col-header" style="color:#818cf8;">
+                        <i class="bi bi-tools me-2"></i>Skills to Add
+                    </div>
+                    <ul class="sugg-list">
+                        {% for skill in s.skills_to_add %}
+                        <li class="sugg-item"><i class="bi bi-plus-circle-fill me-2" style="color:#818cf8;"></i>{{ skill }}</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+
+                <!-- Recommended Tools -->
+                <div class="sugg-col">
+                    <div class="sugg-col-header" style="color:#34d399;">
+                        <i class="bi bi-gear-fill me-2"></i>Recommended Tools
+                    </div>
+                    <ul class="sugg-list">
+                        {% for tool in s.tools %}
+                        <li class="sugg-item"><i class="bi bi-check2 me-2" style="color:#34d399;"></i>{{ tool }}</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+
+                <!-- Certifications -->
+                <div class="sugg-col">
+                    <div class="sugg-col-header" style="color:#fbbf24;">
+                        <i class="bi bi-award-fill me-2"></i>Certifications
+                    </div>
+                    <ul class="sugg-list">
+                        {% for cert in s.certifications %}
+                        <li class="sugg-item"><i class="bi bi-patch-check-fill me-2" style="color:#fbbf24;"></i>{{ cert }}</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+
+                <!-- Action Tips -->
+                <div class="sugg-col">
+                    <div class="sugg-col-header" style="color:#f87171;">
+                        <i class="bi bi-rocket-fill me-2"></i>Action Tips
+                    </div>
+                    <ul class="sugg-list">
+                        {% for tip in s.tips %}
+                        <li class="sugg-item"><i class="bi bi-arrow-right-circle-fill me-2" style="color:#f87171;"></i>{{ tip }}</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        {% else %}
+
+        <div class="placeholder-card">
+            <div class="placeholder-illustration">
+                <div class="placeholder-circles">
+                    <div class="ph-circle ph-circle-1"></div>
+                    <div class="ph-circle ph-circle-2"></div>
+                    <div class="ph-circle ph-circle-3"></div>
+                </div>
+                <i class="bi bi-file-earmark-person-fill placeholder-icon" style="color: #f59e0b;"></i>
+            </div>
+            <h4 class="placeholder-title">Screen & Rank Resumes</h4>
+            <p class="placeholder-text">Upload a PDF resume to automatically extract text, classify the candidate's domain, and generate a match score using our ML pipeline.</p>
+            <div class="placeholder-features">
+                <span class="ph-feature"><i class="bi bi-check-circle-fill text-success me-1"></i>PDF Parsing</span>
+                <span class="ph-feature"><i class="bi bi-check-circle-fill text-success me-1"></i>24 Categories</span>
+                <span class="ph-feature"><i class="bi bi-check-circle-fill text-success me-1"></i>Match Scoring</span>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Recent Resumes Table -->
+        {% if recent %}
+        <div class="recent-table-card mt-4">
+            <div class="recent-table-header">
+                <h6><i class="bi bi-clock-history me-2"></i>Recent Screenings</h6>
+            </div>
+            <div class="table-responsive">
+                <table class="table custom-table">
+                    <thead>
+                        <tr>
+                            <th>Candidate</th>
+                            <th>Category</th>
+                            <th>Match</th>
+                            <th>Date</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for r in recent %}
+                        <tr>
+                            <td><strong>{{ r.candidate_name }}</strong></td>
+                            <td>{{ r.category }}</td>
+                            <td>
+                                <span class="match-pill {% if r.match_score >= 75 %}match-high{% elif r.match_score >= 50 %}match-mid{% else %}match-low{% endif %}">
+                                    {{ r.match_score }}%
+                                </span>
+                            </td>
+                            <td class="text-muted small">{{ r.created_at.strftime('%d %b, %H:%M') }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+function handleFileSelect(input) {
+    if (input.files && input.files[0]) {
+        const file = input.files[0];
+        document.getElementById('fileName').textContent = file.name;
+        document.getElementById('fileSelected').classList.remove('d-none');
+        document.querySelector('.file-upload-icon').classList.add('d-none');
+        document.querySelector('.file-upload-text').classList.add('d-none');
+    }
+}
+
+// Drag and drop
+const uploadArea = document.getElementById('uploadArea');
+uploadArea.addEventListener('dragover', (e) => {
+    e.preventDefault();
+    uploadArea.classList.add('drag-over');
+});
+uploadArea.addEventListener('dragleave', () => uploadArea.classList.remove('drag-over'));
+uploadArea.addEventListener('drop', (e) => {
+    e.preventDefault();
+    uploadArea.classList.remove('drag-over');
+    const files = e.dataTransfer.files;
+    if (files.length > 0 && files[0].type === 'application/pdf') {
+        const input = document.getElementById('resume_file');
+        const dt = new DataTransfer();
+        dt.items.add(files[0]);
+        input.files = dt.files;
+        handleFileSelect(input);
+    }
+});
+
+document.getElementById('resumeForm').addEventListener('submit', function() {
+    document.getElementById('rankBtn').innerHTML = '<i class="bi bi-arrow-repeat spin me-2"></i>Processing...';
+    document.getElementById('rankBtn').disabled = true;
+});
+
+// Apply match bar width and colour from data attribute
+(function applyMatchBar() {
+    var mb = document.getElementById('matchBar');
+    if (!mb) return;
+    var score = parseFloat(mb.getAttribute('data-score')) || 0;
+    mb.style.width = score + '%';
+    mb.style.background = score >= 75 ? '#22c55e' : score >= 50 ? '#f59e0b' : '#ef4444';
+})();
+</script>
+{% endblock %}

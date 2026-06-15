@@ -1,0 +1,16 @@
+Flask==3.0.3
+pandas
+numpy
+scikit-learn==1.6.1
+joblib
+PyPDF2
+SQLAlchemy
+Flask-SQLAlchemy
+Werkzeug
+gunicorn
+matplotlib
+psycopg2-binary
+python-dotenv
+Flask-Login
+Flask-Mail
+Flask-Bcrypt
